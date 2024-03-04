@@ -23,9 +23,12 @@ class Azul:
         self._bag_of_tiles = Bag()
 
     def make_move(self, factory_id: int, color_id: int, pattern_line_row: int, player_id: int):
-        assert 0 <= factory_id < len(self._factories)
-        assert 0 < color_id <= 4
-        assert 0 <= pattern_line_row <= 5
+        if not 0 <= factory_id < len(self._factories):
+            return -1
+        if not 0 < color_id <= 4:
+            return -2
+        if not 0 <= pattern_line_row <= 5:
+            return -3
 
         # handle factories
         tiles = self._factories[factory_id].get_and_remove_color_tiles(color_id)
