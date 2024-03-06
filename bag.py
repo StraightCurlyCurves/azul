@@ -24,5 +24,5 @@ class Bag:
         self._tiles = self._tiles[~mask]
         return tiles
 
-    def add_tiles(self, tiles):
+    def add_tiles(self, tiles) -> None:
         self._tiles = np.concatenate((self._tiles, tiles))

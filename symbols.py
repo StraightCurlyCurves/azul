@@ -7,5 +7,5 @@ class Symbol:
     Color2 = 2
     Color3 = 3
     Color4 = 4
-    Color4 = 5
+    Color5 = 5
     FirstPlayerMarker = 6

@@ -17,7 +17,7 @@ class Azul:
         self._bag_of_tiles = Bag()
         self._temp_out_of_game_tiles = np.array([], dtype=int)
 
-    def make_move(self, factory_id: int, color_id: int, pattern_line_row: int, player_id: int):
+    def make_move(self, factory_id: int, color_id: int, pattern_line_row: int, player_id: int) -> bool:
         assert 0 <= factory_id < len(self._factories)
         assert 0 < color_id <= 4
         assert -1 <= pattern_line_row < 5
@@ -35,29 +35,40 @@ class Azul:
 
         return self._is_end_of_round()
     
-    def handle_end_of_turn(self):
+    def handle_end_of_round(self) -> bool:
+        is_end_of_game = False
         for i, pb in enumerate(self._playerboards):
-            temp_out_of_game_tiles = pb.handle_end_of_turn_and_get_tiles()
+            _is_end_of_game, temp_out_of_game_tiles = pb.handle_end_of_round_and_get_tiles()
+            if _is_end_of_game:
+                is_end_of_game = True
             if np.count_nonzero(temp_out_of_game_tiles == Symbol.FirstPlayerMarker):
                 self._first_player_id = i
             self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles, temp_out_of_game_tiles))
         self._refill_factories()
         self._factories[0].add_tiles(np.array([Symbol.FirstPlayerMarker]))
-        return
+        return is_end_of_game
+    
+    def handle_end_of_game(self) -> list:
+        player_scores = []
+        for pb in self._playerboards:
+            final_score = pb.handle_end_of_game()
+            player_scores.append(final_score)
+
+        return player_scores
         
-    def get_playerboards(self):
+    def get_playerboards(self) -> list[Playerboard]:
         return self._playerboards.copy()
     
-    def get_factories(self):
+    def get_factories(self) -> list[Factory]:
         return self._factories.copy()
     
-    def _is_end_of_round(self):
+    def _is_end_of_round(self) -> bool:
         n_tiles = 0
         for factory in self._factories:
             n_tiles += factory.get_tiles().size
         return n_tiles == 0
     
-    def _refill_factories(self):
+    def _refill_factories(self) -> None:
         for factory in self._factories:
             tiles = self._bag_of_tiles.get_and_remove_n_tiles(4)
             if tiles.size < 4:

@@ -2,6 +2,7 @@ import numpy as np
 from symbols import Symbol
 
 # TODO: test point counting
+# TODO: handle first player marker correctly at end of round
 
 class Playerboard:
     
@@ -48,28 +49,48 @@ class Playerboard:
 
         return temp_out_of_game_tiles
     
-    def handle_end_of_turn_and_get_tiles(self):
+    def handle_end_of_round_and_get_tiles(self) -> tuple[bool, np.ndarray]:
         temp_out_of_game_tiles = np.array([], dtype=int)
         # place tiles on walls and count points
         for i, pattern_line in enumerate(self._pattern_lines):
             if np.count_nonzero(pattern_line) == pattern_line.size:
                 color_id = pattern_line[0]
-                self._place_tile_on_wall_and_count_points(color_id, i)
+                is_end_of_game = self._place_tile_on_wall_and_count_points(color_id, i)
                 temp_out_of_game_tiles = np.concatenate(temp_out_of_game_tiles, pattern_line[1:])
-                self._pattern_lines[i][:] = 0
+                self._pattern_lines[i][:] = Symbol.EmptyField
 
         # count negative points
         negative_points = self._floor_line_val[:np.count_nonzero(self._floor_line)].sum()
         self._score += negative_points
 
-        tiles = self._floor_line[~(self._floor_line==0)]
+        # remove tiles from floor
+        tiles = self._floor_line[~(self._floor_line==Symbol.EmptyField)]
         tiles_without_fpm = tiles[~(tiles==Symbol.FirstPlayerMarker)]
         temp_out_of_game_tiles = np.concatenate(temp_out_of_game_tiles, tiles_without_fpm)
-        self._floor_line[:] = 0
+        self._floor_line[:] = Symbol.EmptyField
 
-        return temp_out_of_game_tiles
+        return is_end_of_game, temp_out_of_game_tiles
     
-    def _place_tile_on_wall_and_count_points(self, color_id, pattern_line_row):
+    def handle_end_of_game(self):
+        # count full horizontal
+        for row in self._wall:
+            if np.count_nonzero(row) == 5:
+                self._score += 2
+        
+        # count full vertical
+        for col in self._wall.T:
+            if np.count_nonzero(col) == 5:
+                self._score += 7
+
+        # count all colors
+        color_ids = [Symbol.Color1, Symbol.Color2, Symbol.Color3, Symbol.Color4, Symbol.Color5]
+        for color_id in color_ids:
+            if np.count_nonzero(self._wall == color_id) == 5:
+                self._score += 10
+        
+        return self._score
+    
+    def _place_tile_on_wall_and_count_points(self, color_id: int, pattern_line_row: int) -> bool:
         # get coordinates
         row, col = pattern_line_row, np.nonzero(self._wall_colors[pattern_line_row]==color_id)[0][0]
         assert self._wall[row, col] == 0
@@ -109,6 +130,13 @@ class Playerboard:
         # if one or both axis only had one connected tiles, the placed tile doesn't count twice
         if y_points == 1 or x_points == 1:
             self._score -= 1
+
+        if x_points == 5:
+            is_end_of_game = True
+        else:
+            is_end_of_game = False
+
+        return is_end_of_game
 
     def _place_tiles_on_floor_line(self, tiles: np.ndarray) -> np.ndarray:
         temp_out_of_game_tiles = np.array([], dtype=int)
