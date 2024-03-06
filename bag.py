@@ -13,6 +13,10 @@ class Bag:
         self._tiles[80:] = 5
 
     def get_and_remove_n_tiles(self, n: int) -> np.ndarray:
+        if n > self._tiles.size:
+            tiles = self._tiles
+            self._tiles = np.array([], dtype=int)
+            return tiles
         mask = np.full(self._tiles.size, False, dtype=bool)
         random_indices = np.random.choice(self._tiles.size, n)
         mask[random_indices] = True

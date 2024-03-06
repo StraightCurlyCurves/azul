@@ -1,6 +1,8 @@
 import numpy as np
 from symbols import Symbol
 
+# TODO: test point counting
+
 class Playerboard:
     
     def __init__(self) -> None:
@@ -45,6 +47,68 @@ class Playerboard:
                                                      self._place_tiles_on_pattern_line(tiles, pattern_line_row)))
 
         return temp_out_of_game_tiles
+    
+    def handle_end_of_turn_and_get_tiles(self):
+        temp_out_of_game_tiles = np.array([], dtype=int)
+        # place tiles on walls and count points
+        for i, pattern_line in enumerate(self._pattern_lines):
+            if np.count_nonzero(pattern_line) == pattern_line.size:
+                color_id = pattern_line[0]
+                self._place_tile_on_wall_and_count_points(color_id, i)
+                temp_out_of_game_tiles = np.concatenate(temp_out_of_game_tiles, pattern_line[1:])
+                self._pattern_lines[i][:] = 0
+
+        # count negative points
+        negative_points = self._floor_line_val[:np.count_nonzero(self._floor_line)].sum()
+        self._score += negative_points
+
+        tiles = self._floor_line[~(self._floor_line==0)]
+        tiles_without_fpm = tiles[~(tiles==Symbol.FirstPlayerMarker)]
+        temp_out_of_game_tiles = np.concatenate(temp_out_of_game_tiles, tiles_without_fpm)
+        self._floor_line[:] = 0
+
+        return temp_out_of_game_tiles
+    
+    def _place_tile_on_wall_and_count_points(self, color_id, pattern_line_row):
+        # get coordinates
+        row, col = pattern_line_row, np.nonzero(self._wall_colors[pattern_line_row]==color_id)[0][0]
+        assert self._wall[row, col] == 0
+        self._wall[row, col] = color_id
+
+        # count points
+        x_components = self._wall[row, :] > 0
+        y_components = self._wall[:, col] > 0
+
+        # count vertical points
+        y_points = 0
+        connected = False
+        for i, field in enumerate(y_components):
+            if i == row:
+                connected = True
+            if field > 0:
+                y_points += 1
+            elif not connected:
+                y_points = 0
+            else:
+                break
+
+        # count horizontal points
+        x_points = 0
+        connected = False
+        for i, field in enumerate(x_components):
+            if i == col:
+                connected = True
+            if field > 0:
+                x_points += 1
+            elif not connected:
+                x_points = 0
+            else:
+                break
+        
+        self._score = x_points + y_points
+        # if one or both axis only had one connected tiles, the placed tile doesn't count twice
+        if y_points == 1 or x_points == 1:
+            self._score -= 1
 
     def _place_tiles_on_floor_line(self, tiles: np.ndarray) -> np.ndarray:
         temp_out_of_game_tiles = np.array([], dtype=int)

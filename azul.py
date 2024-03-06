@@ -18,12 +18,9 @@ class Azul:
         self._temp_out_of_game_tiles = np.array([], dtype=int)
 
     def make_move(self, factory_id: int, color_id: int, pattern_line_row: int, player_id: int):
-        if not 0 <= factory_id < len(self._factories):
-            return -1
-        if not 0 < color_id <= 4:
-            return -2
-        if not -1 <= pattern_line_row < 5:
-            return -3
+        assert 0 <= factory_id < len(self._factories)
+        assert 0 < color_id <= 4
+        assert -1 <= pattern_line_row < 5
 
         # handle factories
         tiles = self._factories[factory_id].get_and_remove_color_tiles(color_id)
@@ -36,15 +33,17 @@ class Azul:
         temp_out_of_game_tiles = self._playerboards[player_id].place_tiles(tiles, pattern_line_row)
         self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles, temp_out_of_game_tiles))
 
-        return self._is_end_of_turn()
+        return self._is_end_of_round()
     
     def handle_end_of_turn(self):
         for i, pb in enumerate(self._playerboards):
-            temp_out_of_game_tiles = pb.handle_end_of_turn_and_get_tiles() # TODO
+            temp_out_of_game_tiles = pb.handle_end_of_turn_and_get_tiles()
             if np.count_nonzero(temp_out_of_game_tiles == Symbol.FirstPlayerMarker):
                 self._first_player_id = i
             self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles, temp_out_of_game_tiles))
-        self._refill_factories() # TODO
+        self._refill_factories()
+        self._factories[0].add_tiles(np.array([Symbol.FirstPlayerMarker]))
+        return
         
     def get_playerboards(self):
         return self._playerboards.copy()
@@ -52,8 +51,16 @@ class Azul:
     def get_factories(self):
         return self._factories.copy()
     
-    def _is_end_of_turn(self):
+    def _is_end_of_round(self):
         n_tiles = 0
         for factory in self._factories:
             n_tiles += factory.get_tiles().size
         return n_tiles == 0
+    
+    def _refill_factories(self):
+        for factory in self._factories:
+            tiles = self._bag_of_tiles.get_and_remove_n_tiles(4)
+            if tiles.size < 4:
+                self._bag_of_tiles.add_tiles(self._temp_out_of_game_tiles)
+            tiles = np.concatenate(tiles, self._bag_of_tiles.get_and_remove_n_tiles(4 - tiles.size))
+            factory.add_tiles(tiles)
