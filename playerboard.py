@@ -2,7 +2,6 @@ import numpy as np
 from symbols import Symbol
 
 # TODO: test point counting
-# TODO: handle first player marker correctly at end of round
 
 class Playerboard:
     
@@ -51,7 +50,7 @@ class Playerboard:
     
     def handle_end_of_round_and_get_tiles(self) -> tuple[bool, np.ndarray]:
         temp_out_of_game_tiles = np.array([], dtype=int)
-        # place tiles on walls and count points
+        # place tiles on walls, count points and remove left over tiles
         for i, pattern_line in enumerate(self._pattern_lines):
             if np.count_nonzero(pattern_line) == pattern_line.size:
                 color_id = pattern_line[0]
@@ -65,8 +64,7 @@ class Playerboard:
 
         # remove tiles from floor
         tiles = self._floor_line[~(self._floor_line==Symbol.EmptyField)]
-        tiles_without_fpm = tiles[~(tiles==Symbol.FirstPlayerMarker)]
-        temp_out_of_game_tiles = np.concatenate(temp_out_of_game_tiles, tiles_without_fpm)
+        temp_out_of_game_tiles = np.concatenate(temp_out_of_game_tiles, tiles)
         self._floor_line[:] = Symbol.EmptyField
 
         return is_end_of_game, temp_out_of_game_tiles

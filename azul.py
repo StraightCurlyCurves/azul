@@ -43,9 +43,10 @@ class Azul:
                 is_end_of_game = True
             if np.count_nonzero(temp_out_of_game_tiles == Symbol.FirstPlayerMarker):
                 self._first_player_id = i
-            self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles, temp_out_of_game_tiles))
+                self._factories[0].add_tiles(np.array([Symbol.FirstPlayerMarker]))
+            self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles,
+                temp_out_of_game_tiles[~(temp_out_of_game_tiles == Symbol.FirstPlayerMarker)]))
         self._refill_factories()
-        self._factories[0].add_tiles(np.array([Symbol.FirstPlayerMarker]))
         return is_end_of_game
     
     def handle_end_of_game(self) -> list:
