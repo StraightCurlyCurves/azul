@@ -1,27 +1,27 @@
 import numpy as np
+from symbols import Symbol
 
 class Factory:
     
     def __init__(self) -> None:
-        self.tiles = np.array([], dtype=int)
+        self._tiles = np.array([], dtype=int)
 
     def get_tiles(self) -> np.ndarray:
-        return self.tiles.copy()
+        return self._tiles.copy()
     
     def get_and_remove_tiles(self) -> np.ndarray:
-        tiles = self.tiles.copy()
-        self.tiles = np.array([], dtype=int)
+        tiles = self._tiles.copy()
+        self._tiles = np.array([], dtype=int)
         return tiles
 
     def get_and_remove_color_tiles(self, color_id: int) -> np.ndarray:
-        mask = self.tiles == color_id
-        if self.tiles[mask].size > 0:
+        mask = self._tiles == color_id
+        if self._tiles[mask].size > 0:
             # get first player marker
-            mask = np.logical_or(self.tiles == color_id, self.tiles == 0)
-        tiles = self.tiles[mask]
-        self.tiles = self.tiles[~mask]
+            mask = np.logical_or(self._tiles == color_id, self._tiles == Symbol.FirstPlayerMarker)
+        tiles = self._tiles[mask]
+        self._tiles = self._tiles[~mask]
         return tiles
 
     def add_tiles(self, tiles: np.ndarray) -> None:
-        np.concatenate((self.tiles, tiles))
-        np.logical_or()
+        self._tiles = np.concatenate((self._tiles, tiles))
