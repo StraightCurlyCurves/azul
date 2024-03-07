@@ -10,7 +10,7 @@ class Playerboard:
         self._wall = np.zeros((5,5), dtype=int)
         self._pattern_lines: list[np.ndarray] = []
         for i in range(6):
-            self._pattern_lines.append(np.zeros(i, dtype=int))
+            self._pattern_lines.append(np.zeros(i+1, dtype=int))
         self._floor_line = np.zeros(7, dtype=int)
 
         self._floor_line_val = np.array([-1, -1, -2, -2, -2, -3, -3], dtype=int)
@@ -94,7 +94,7 @@ class Playerboard:
         assert self._wall[row, col] == 0
         self._wall[row, col] = color_id
 
-        # count points
+        # generate components
         x_components = self._wall[row, :] > 0
         y_components = self._wall[:, col] > 0
 
