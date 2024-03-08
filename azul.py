@@ -19,8 +19,9 @@ class Azul:
 
     def make_move(self, factory_id: int, color_id: int, pattern_line_row: int, player_id: int) -> bool:
         assert 0 <= factory_id < len(self._factories)
-        assert 0 < color_id <= 4
+        assert Symbol.is_valid_color(color_id)
         assert -1 <= pattern_line_row < 5
+        assert 0 <= player_id < len(self._playerboards)
 
         # handle factories
         tiles = self._factories[factory_id].get_and_remove_color_tiles(color_id)
@@ -74,5 +75,5 @@ class Azul:
             tiles = self._bag_of_tiles.get_and_remove_n_tiles(4)
             if tiles.size < 4:
                 self._bag_of_tiles.add_tiles(self._temp_out_of_game_tiles)
-            tiles = np.concatenate(tiles, self._bag_of_tiles.get_and_remove_n_tiles(4 - tiles.size))
+            tiles = np.concatenate((tiles, self._bag_of_tiles.get_and_remove_n_tiles(4 - tiles.size)))
             factory.add_tiles(tiles)
