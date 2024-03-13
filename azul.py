@@ -6,7 +6,6 @@ from playerboard import Playerboard
 from factory import Factory
 from bag import Bag
 from symbols import Symbol
-from bot import Bot
 from cmd_colors import Colors
 
 from copy import deepcopy
@@ -366,6 +365,7 @@ if __name__ == '__main__':
     history_path = 'history_2024-03-13_15-56-10_2_player_seed_8665.npy'
 
     if load_history:
+        player_count = int(history_path.split('_')[-4])
         # not really necessary, but will lead to same outcome if newly played the same
         seed = int(history_path.split('_')[-1].split('.')[0])
     else:

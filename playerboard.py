@@ -79,6 +79,7 @@ class Playerboard:
         # count negative points
         negative_points = self._floor_line_val[:np.count_nonzero(self._floor_line!=EF)].sum()
         self._score += negative_points
+        if self._score < 0: self._score = 0
 
         # remove tiles from floor
         tiles = self._floor_line[self._floor_line!=EF]
