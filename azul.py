@@ -1,4 +1,6 @@
+import os
 import numpy as np
+from datetime import datetime
 
 from playerboard import Playerboard
 from factory import Factory
@@ -20,8 +22,9 @@ class Azul:
         self._bag_of_tiles = Bag()
         self._temp_out_of_game_tiles = np.array([], dtype=int)
 
-        self._history: list[tuple[int, list[Playerboard], list[Factory], Bag, np.ndarray]] = []
-        self._history_current_index = 0
+        # [ [ players_move, [playerboards], [factories], bag, temp_out_of_game_tiles, [move] ] ]
+        self._history: list[tuple[int, list[Playerboard], list[Factory], Bag, np.ndarray, list[int]]] = []
+        self._history_current_index = -1
 
         self._setup_game()
 
@@ -51,10 +54,12 @@ class Azul:
         if self._is_end_of_round():
             is_end_of_game = self._handle_end_of_round()
             if is_end_of_game:
+                self._players_move = -1
                 for pb in self._playerboards:
                     _ = pb.handle_end_of_game()
         self.check_integrity()
-        self._update_history()
+        move = [factory_id, color_id, pattern_line_row, player_id]
+        self._update_history(move)
         return is_end_of_game   
     
     def move_back(self) -> bool:
@@ -115,8 +120,13 @@ class Azul:
         bag_row_start = 1
         temp_out_of_game_tiles_count = 1
         c_row, c_col = 0, 0
-        print('\033[2J', end='')
-        print('\033[1;0H', end='')
+        spaces = ''
+        for i in range(os.get_terminal_size().lines):
+            spaces += '\n'
+        print(spaces)
+        mv_c(0,0)
+        # print('\033[2J', end='')
+        # print('\033[1;0H', end='')
 
         print('Bag:')
         esc_string = ''
@@ -188,7 +198,12 @@ class Azul:
         for player_id, pb in enumerate(self._playerboards):
             player_row = c_row
             c_col = player_id*player_width
-            print(f'{Colors.italic}{Colors.underline}Player {player_id}:{Colors.reset}')
+
+            if player_id == self._players_move:
+                color_format = Colors.bg_green + Colors.italic + Colors.black
+            else:
+                color_format = Colors.underline + Colors.italic
+            print(f'{color_format}Player {player_id}:{Colors.reset}')
             c_row += 1
             mv_c(c_row, c_col)
             print('Pattern lines:', end='')
@@ -278,6 +293,7 @@ class Azul:
         if n_players == 4:
             for i in range(9+1):
                 self._factories.append(Factory())
+        self._factories[0].add_tiles(np.array([Symbol.FirstPlayerMarker]))
         self._refill_factories()
         self._update_history()
     
@@ -295,46 +311,77 @@ class Azul:
                 is_end_of_game = True
             if np.count_nonzero(temp_out_of_game_tiles == Symbol.FirstPlayerMarker):
                 self._players_move = i
-                self._factories[0].add_tiles(np.array([Symbol.FirstPlayerMarker]))
-            self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles,
-                temp_out_of_game_tiles[~(temp_out_of_game_tiles == Symbol.FirstPlayerMarker)]))
+            self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles, temp_out_of_game_tiles))
         self._refill_factories()
         return is_end_of_game
     
     def _refill_factories(self) -> None:
+        mask_fpm = self._temp_out_of_game_tiles == Symbol.FirstPlayerMarker
+        self._factories[0].add_tiles(self._temp_out_of_game_tiles[mask_fpm])
+        self._temp_out_of_game_tiles = self._temp_out_of_game_tiles[~mask_fpm]
         for factory in self._factories[1:]:
             tiles = self._bag_of_tiles.get_and_remove_n_tiles(4)
             if tiles.size < 4:
                 self._bag_of_tiles.add_tiles(self._temp_out_of_game_tiles)
             tiles = np.concatenate((tiles, self._bag_of_tiles.get_and_remove_n_tiles(4 - tiles.size)))
             factory.add_tiles(tiles)
-        self._factories[0].add_tiles(np.array([Symbol.FirstPlayerMarker]))
 
-    def _update_history(self) -> None:
+    def _update_history(self, move: list[int] = []) -> None:
         if self._history_current_index < len(self._history)-1:
             self._history = self._history[:self._history_current_index+1]
         state = (self._players_move,
                 deepcopy(self._playerboards),
                 deepcopy(self._factories),
                 deepcopy(self._bag_of_tiles),
-                deepcopy(self._temp_out_of_game_tiles))
+                deepcopy(self._temp_out_of_game_tiles),
+                deepcopy(move))
         self._history.append(state)
         self._history_current_index += 1
 
+    def save_history(self, seed=0):
+        def getTimeStr(seperator=':'):
+            time_format = f"%H{seperator}%M{seperator}%S"
+            time = datetime.now()
+            return time.strftime(time_format)
+
+        def getDateStr(seperator='-'):
+            time_format = f"%Y{seperator}%m{seperator}%d"
+            time = datetime.now()
+            return time.strftime(time_format)
+        path = f"history_{getDateStr('-')}_{getTimeStr('-')}_{self._player_count}_player_seed_{seed}.npy"
+        np.save(path, np.array(self._history, dtype=object), allow_pickle=True)
+
+    def load_history(self, path):
+        self._history = np.load(path, allow_pickle=True)
+        state = self._history[self._history_current_index]
+        self._players_move = state[0]
+        self._playerboards = deepcopy(state[1])
+        self._factories = deepcopy(state[2])
+        self._bag_of_tiles = deepcopy(state[3])
+        self._temp_out_of_game_tiles = deepcopy(state[4])
+
 if __name__ == '__main__':
-    seed = np.random.randint(100000)
+    player_count = 2
+    load_history = True
+    history_path = 'history_2024-03-13_15-56-10_2_player_seed_8665.npy'
+
+    if load_history:
+        # not really necessary, but will lead to same outcome if newly played the same
+        seed = int(history_path.split('_')[-1].split('.')[0])
+    else:
+        seed = np.random.randint(100000)
     np.random.seed(seed)
 
-    player_count = 4
-    first_player_id = seed = np.random.randint(player_count)
+    first_player_id = np.random.randint(player_count)
 
     a = Azul(player_count, first_player_id)
+    if load_history:
+        a.load_history(history_path)
     is_end_of_game = False
     is_end_of_round = False
     
     while not is_end_of_game:
         a.print_state()
-        print(f'Player {a._players_move}:')
 
         factory_id = input(f'Factory ID: ')
         if factory_id == 'b':
@@ -343,6 +390,10 @@ if __name__ == '__main__':
         elif factory_id == 'f':
             a.move_forward()
             continue
+        elif factory_id == 'q':
+            a.save_history(seed)
+            print('Saved game and quit.')
+            break
         else:
             try:
                 factory_id = int(factory_id)
@@ -377,7 +428,10 @@ if __name__ == '__main__':
         
         if is_end_of_game:
             a.print_state()
-            console_input = input("End of game. Press Enter to quit or 'b' to go back one move.")
-            if console_input == 'r':
+            console_input = input("End of game. Press Enter to save and quit or 'b' to go back one move.")
+            if console_input == 'b':
                 a.move_back()
                 is_end_of_game = False
+            else:
+                a.save_history(seed)
+            
