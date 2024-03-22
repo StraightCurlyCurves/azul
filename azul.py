@@ -7,6 +7,7 @@ from factory import Factory
 from bag import Bag
 from symbols import Symbol
 from cmd_colors import Colors
+from player import Player
 
 from copy import deepcopy
 
@@ -14,18 +15,14 @@ class Azul:
 
     def __init__(self, player_count=2, first_player_id=0) -> None:
         self._player_count = player_count
-        self._players_move = first_player_id
+        self._players_move_id = first_player_id
         self._playerboards: list[Playerboard] = []
         self._factories: list[Factory] = [] # factories[0] is the middle pool
 
         self._bag_of_tiles = Bag()
         self._temp_out_of_game_tiles = np.array([], dtype=int)
 
-        # [ [ players_move, [playerboards], [factories], bag, temp_out_of_game_tiles, [move] ] ]
-        self._history: list[tuple[int, list[Playerboard], list[Factory], Bag, np.ndarray, list[int]]] = []
-        self._history_current_index = -1
-
-        self._setup_game()
+        self._setup_game()        
 
     def make_move(self, factory_id: int, color_id: int, pattern_line_row: int, player_id: int) -> bool:
         assert 0 <= factory_id < len(self._factories), 'Invalid factory ID'
@@ -45,47 +42,34 @@ class Azul:
         self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles, temp_out_of_game_tiles))
 
         # players move
-        self._players_move += 1
-        self._players_move %= self._player_count
+        self._players_move_id += 1
+        self._players_move_id %= self._player_count
 
         # check game state, return is_end_of_game
         is_end_of_game = False
         if self._is_end_of_round():
             is_end_of_game = self._handle_end_of_round()
             if is_end_of_game:
-                self._players_move = -1
+                self._players_move_id = -1
                 for pb in self._playerboards:
                     _ = pb.handle_end_of_game()
-        self.check_integrity()
-        move = [factory_id, color_id, pattern_line_row, player_id]
-        self._update_history(move)
-        return is_end_of_game   
+        self.check_integrity()   
+        return is_end_of_game    
     
-    def move_back(self) -> bool:
-        if self._history_current_index > 0:
-            self._history_current_index -= 1
-            state = self._history[self._history_current_index]
-            self._players_move = state[0]
-            self._playerboards = deepcopy(state[1])
-            self._factories = deepcopy(state[2])
-            self._bag_of_tiles = deepcopy(state[3])
-            self._temp_out_of_game_tiles = deepcopy(state[4])
-            return True
-        else:
-            return False
+    def get_state(self) -> tuple[int, list[Playerboard], list[Factory], Bag, np.ndarray, list[int]]:
+        state = (deepcopy(self._players_move_id),
+                 deepcopy(self._playerboards),
+                 deepcopy(self._factories),
+                 deepcopy(self._bag_of_tiles),
+                 deepcopy(self._temp_out_of_game_tiles))
+        return state
     
-    def move_forward(self) -> bool:
-        if self._history_current_index < len(self._history)-1:
-            self._history_current_index += 1
-            state = self._history[self._history_current_index]
-            self._players_move = state[0]
-            self._playerboards = deepcopy(state[1])
-            self._factories = deepcopy(state[2])
-            self._bag_of_tiles = deepcopy(state[3])
-            self._temp_out_of_game_tiles = deepcopy(state[4])
-            return True
-        else:
-            return False 
+    def set_state(self, state):
+        self._players_move_id = deepcopy(state[0])
+        self._playerboards = deepcopy(state[1])
+        self._factories = deepcopy(state[2])
+        self._bag_of_tiles = deepcopy(state[3])
+        self._temp_out_of_game_tiles = deepcopy(state[4])
 
     def check_integrity(self) -> None:
         all_tiles = np.array([], dtype=int)
@@ -111,7 +95,13 @@ class Azul:
     def get_factories(self) -> list[Factory]:
         return deepcopy(self._factories)
     
-    def print_state(self) -> None:
+    def get_players_move_id(self):
+        return self._players_move_id
+    
+    def get_player_count(self) -> int:
+        return self._player_count
+    
+    def print_state(self, players: list[Player] = None) -> None:
         def mv_c(row, col):
             print(f'\033[{row};{col}H', end='')
         bag_width = 15
@@ -198,11 +188,14 @@ class Azul:
             player_row = c_row
             c_col = player_id*player_width
 
-            if player_id == self._players_move:
+            if player_id == self._players_move_id:
                 color_format = Colors.bg_green + Colors.italic + Colors.black
             else:
                 color_format = Colors.underline + Colors.italic
-            print(f'{color_format}Player {player_id}:{Colors.reset}')
+            if type(players) != None:
+                print(f'{color_format}{players[player_id].name}:{Colors.reset}')
+            else:
+                print(f'{color_format}Player {player_id}:{Colors.reset}')
             c_row += 1
             mv_c(c_row, c_col)
             print('Pattern lines:', end='')
@@ -293,8 +286,7 @@ class Azul:
             for i in range(9+1):
                 self._factories.append(Factory())
         self._factories[0].add_tiles(np.array([Symbol.FirstPlayerMarker]))
-        self._refill_factories()
-        self._update_history()
+        self._refill_factories()        
     
     def _is_end_of_round(self) -> bool:
         n_tiles = 0
@@ -309,7 +301,7 @@ class Azul:
             if _is_end_of_game:
                 is_end_of_game = True
             if np.count_nonzero(temp_out_of_game_tiles == Symbol.FirstPlayerMarker):
-                self._players_move = i
+                self._players_move_id = i
             self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles, temp_out_of_game_tiles))
         self._refill_factories()
         return is_end_of_game
@@ -324,37 +316,3 @@ class Azul:
                 self._bag_of_tiles.add_tiles(self._temp_out_of_game_tiles)
             tiles = np.concatenate((tiles, self._bag_of_tiles.get_and_remove_n_tiles(4 - tiles.size)))
             factory.add_tiles(tiles)
-
-    def _update_history(self, move: list[int] = []) -> None:
-        if self._history_current_index < len(self._history)-1:
-            self._history = self._history[:self._history_current_index+1]
-        state = (self._players_move,
-                deepcopy(self._playerboards),
-                deepcopy(self._factories),
-                deepcopy(self._bag_of_tiles),
-                deepcopy(self._temp_out_of_game_tiles),
-                deepcopy(move))
-        self._history.append(state)
-        self._history_current_index += 1
-
-    def save_history(self, seed=0):
-        def getTimeStr(seperator=':'):
-            time_format = f"%H{seperator}%M{seperator}%S"
-            time = datetime.now()
-            return time.strftime(time_format)
-
-        def getDateStr(seperator='-'):
-            time_format = f"%Y{seperator}%m{seperator}%d"
-            time = datetime.now()
-            return time.strftime(time_format)
-        path = f"history_{getDateStr('-')}_{getTimeStr('-')}_{self._player_count}_player_seed_{seed}.npy"
-        np.save(path, np.array(self._history, dtype=object), allow_pickle=True)
-
-    def load_history(self, path):
-        self._history = np.load(path, allow_pickle=True)
-        state = self._history[self._history_current_index]
-        self._players_move = state[0]
-        self._playerboards = deepcopy(state[1])
-        self._factories = deepcopy(state[2])
-        self._bag_of_tiles = deepcopy(state[3])
-        self._temp_out_of_game_tiles = deepcopy(state[4])
