@@ -45,20 +45,3 @@ def test_make_move():
     assert a._factories[f_id]._tiles.size == 0
     assert a._factories[0]._tiles.size == 5
     assert np.array_equal(a._playerboards[p_id]._pattern_lines[plr], np.array([0,0,2,2]))
-
-# if __name__ == '__main__':
-#     a = Azul()
-#     a._add_playerboard()
-#     a._add_playerboard()
-#     a.setup_game()
-#     ''' with seed(0), color id from Symbol:
-#     [6]
-#     [1 2 3 5]
-#     [1 3 5 5]
-#     [2 2 4 5]
-#     [2 2 3 4]
-#     [1 3 5 5]
-#     '''
-#     is_end_of_round = a.make_move(2, C5, 1, 0)
-#     assert is_end_of_round == False
-#     assert a._factories[2]._tiles.size == 0 

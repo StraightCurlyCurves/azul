@@ -114,8 +114,6 @@ class Azul:
             spaces += '\n'
         print(spaces)
         mv_c(0,0)
-        # print('\033[2J', end='')
-        # print('\033[1;0H', end='')
 
         print('Bag:')
         esc_string = ''
@@ -155,13 +153,6 @@ class Azul:
             c_row, c_col = bag_row_start+len(self._factories)+2, 0
             mv_c(c_row, c_col)
 
-        # factory_width = 0
-        # if len(self._factories[0]._tiles) > 4:
-        #     factory_width = len(self._factories[0]._tiles) * 2 + 3
-        # else:
-        #     factory_width = 10
-        # c_col = 2*bag_width+3 + factory_width+3
-        # mv_c(c_row, c_col)
         print('Temp out of game tiles:', end='')
         c_row += 1
         mv_c(c_row, c_col)

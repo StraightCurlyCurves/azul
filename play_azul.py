@@ -22,6 +22,7 @@ class PlayAzul:
         
         self._azul: Azul = None
         self._players: list[Player] = []
+
         # [ [players], [ players_move, [playerboards], [factories], bag, temp_out_of_game_tiles, [move] ] ]
         self._history: list[list[Player], list[tuple[int, list[Playerboard], list[Factory], Bag, np.ndarray, list[int]]]] = [self._players, []]
         self._history_current_index = -1        
@@ -169,5 +170,5 @@ class PlayAzul:
         
 if __name__ == '__main__':
     game = PlayAzul(players=['P1', 'P2'])
-    game = PlayAzul(history='history_2024-03-22_18-28-23_2_player_seed_76657.npy')
+    # game = PlayAzul(history='history_???.npy')
     game.play()
