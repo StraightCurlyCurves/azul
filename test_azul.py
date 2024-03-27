@@ -1,10 +1,6 @@
 import numpy as np
 import pytest
 
-from playerboard import Playerboard
-from factory import Factory
-from bag import Bag
-from bot import Bot
 from symbols import Symbol
 from azul import Azul
 
