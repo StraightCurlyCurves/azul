@@ -5,9 +5,6 @@ class Factory:
     
     def __init__(self) -> None:
         self._tiles = np.array([], dtype=int)
-
-    def get_tiles(self) -> np.ndarray:
-        return self._tiles.copy()
     
     def get_and_remove_tiles(self) -> np.ndarray:
         tiles = self._tiles.copy()
@@ -25,3 +22,7 @@ class Factory:
 
     def add_tiles(self, tiles: np.ndarray) -> None:
         self._tiles = np.concatenate((self._tiles, tiles))
+
+    @property
+    def tiles(self) -> np.ndarray:
+        return self._tiles.copy()

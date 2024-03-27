@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from datetime import datetime
+from copy import deepcopy
 
 from playerboard import Playerboard
 from factory import Factory
@@ -8,8 +8,7 @@ from bag import Bag
 from symbols import Symbol
 from cmd_colors import Colors
 from player import Player
-
-from copy import deepcopy
+from history import GameState
 
 class Azul:
 
@@ -19,16 +18,23 @@ class Azul:
         self._playerboards: list[Playerboard] = []
         self._factories: list[Factory] = [] # factories[0] is the middle pool
 
-        self._bag_of_tiles = Bag()
+        self._bag = Bag()
         self._temp_out_of_game_tiles = np.array([], dtype=int)
 
         self._setup_game()        
 
-    def make_move(self, factory_id: int, color_id: int, pattern_line_row: int, player_id: int) -> bool:
-        assert 0 <= factory_id < len(self._factories), 'Invalid factory ID'
-        assert Symbol.is_valid_color(color_id), 'Invalid color ID'
-        assert -1 <= pattern_line_row < 5, 'Invalid pattern line row'
-        assert 0 <= player_id < len(self._playerboards), 'Invalid player ID'
+    def make_move(self, factory_id: int, color_id: int, pattern_line_row: int, player_id: int = None) -> bool:
+        if not (0 <= factory_id < len(self._factories)):
+            raise ValueError('Invalid factory ID')
+        if not Symbol.is_valid_color(color_id):
+            raise ValueError('Invalid color ID')
+        if not (-1 <= pattern_line_row < 5):
+            raise ValueError('Invalid pattern line row')
+        if player_id is not None:
+            if not (0 <= player_id < self._player_count):
+                raise ValueError('Invalid player ID')
+        else:
+            player_id = self._players_move_id
 
         # handle factories
         tiles = self._factories[factory_id].get_and_remove_color_tiles(color_id)
@@ -56,38 +62,48 @@ class Azul:
         self.check_integrity()   
         return is_end_of_game    
     
-    def get_state(self) -> tuple[int, list[Playerboard], list[Factory], Bag, np.ndarray, list[int]]:
-        state = (deepcopy(self._players_move_id),
+    def get_game_state(self) -> GameState:
+        state = GameState(deepcopy(self._players_move_id),
                  deepcopy(self._playerboards),
                  deepcopy(self._factories),
-                 deepcopy(self._bag_of_tiles),
+                 deepcopy(self._bag),
                  deepcopy(self._temp_out_of_game_tiles))
         return state
     
-    def set_state(self, state):
-        self._players_move_id = deepcopy(state[0])
-        self._playerboards = deepcopy(state[1])
-        self._factories = deepcopy(state[2])
-        self._bag_of_tiles = deepcopy(state[3])
-        self._temp_out_of_game_tiles = deepcopy(state[4])
+    def set_game_state(self, state: GameState) -> None:
+        self._players_move_id = deepcopy(state.players_move_id)
+        self._playerboards = deepcopy(state.playerboards)
+        self._factories = deepcopy(state.factories)
+        self._bag = deepcopy(state.bag)
+        self._temp_out_of_game_tiles = deepcopy(state.temp_out_of_game_tiles)
 
     def check_integrity(self) -> None:
         all_tiles = np.array([], dtype=int)
         all_tiles = np.concatenate((all_tiles, self._temp_out_of_game_tiles))
-        all_tiles = np.concatenate((all_tiles, self._bag_of_tiles._tiles))
+        all_tiles = np.concatenate((all_tiles, self._bag._tiles))
         for f in self._factories:
             all_tiles = np.concatenate((all_tiles, f._tiles))
         for pb in self._playerboards:
-            all_tiles = np.concatenate((all_tiles, pb._floor_line[pb._floor_line!=Symbol.EmptyField]))
-            for pl in pb._pattern_lines:
+            all_tiles = np.concatenate((all_tiles, pb.floor_line[pb.floor_line!=Symbol.EmptyField]))
+            for pl in pb.pattern_lines:
                 all_tiles = np.concatenate((all_tiles, pl[pl!=Symbol.EmptyField]))
-            for wl in pb._wall:
+            for wl in pb.wall:
                 all_tiles = np.concatenate((all_tiles, wl[wl!=Symbol.EmptyField]))
-        assert all_tiles[all_tiles==Symbol.Color1].size == 20, 'Integrity check failed.'
-        assert all_tiles[all_tiles==Symbol.Color2].size == 20, 'Integrity check failed.'
-        assert all_tiles[all_tiles==Symbol.Color3].size == 20, 'Integrity check failed.'
-        assert all_tiles[all_tiles==Symbol.Color4].size == 20, 'Integrity check failed.'
-        assert all_tiles[all_tiles==Symbol.Color5].size == 20, 'Integrity check failed.'
+        integrity = True
+        if all_tiles[all_tiles==Symbol.Color1].size != 20:
+            integrity = False
+        if all_tiles[all_tiles==Symbol.Color2].size != 20:
+            integrity = False
+        if all_tiles[all_tiles==Symbol.Color3].size != 20:
+            integrity = False
+        if all_tiles[all_tiles==Symbol.Color4].size != 20:
+            integrity = False
+        if all_tiles[all_tiles==Symbol.Color5].size != 20:
+            integrity = False
+
+        if not integrity:
+            self.print_state()
+            raise Exception('Integrity check failed.')
 
     def get_playerboards(self) -> list[Playerboard]:
         return deepcopy(self._playerboards)
@@ -100,6 +116,12 @@ class Azul:
     
     def get_player_count(self) -> int:
         return self._player_count
+
+    def get_players_score(self) -> list[int]:
+        scores = []
+        for pb in self._playerboards:
+            scores.append(pb.score)
+        return scores
     
     def print_state(self, players: list[Player] = None) -> None:
         def mv_c(row, col):
@@ -117,7 +139,7 @@ class Azul:
 
         print('Bag:')
         esc_string = ''
-        for i, tile in enumerate(self._bag_of_tiles._tiles):
+        for i, tile in enumerate(self._bag._tiles):
             if i > 0 and i%bag_width == 0:
                 esc_string += '\n'
                 bag_row_count += 1
@@ -179,10 +201,24 @@ class Azul:
             player_row = c_row
             c_col = player_id*player_width
 
-            if player_id == self._players_move_id:
+            # check if player has the highest score
+            highest_score = True
+            for pb2 in self._playerboards:
+                if pb2.score > pb.score:
+                    highest_score = False
+                    break
+            
+            # check if it's the end of the game
+            if self._players_move_id == -1:
+                if highest_score:
+                    color_format = Colors.bold + Colors.bg_fpm + Colors.black
+                else:
+                    color_format = Colors.underline + Colors.italic
+            elif player_id == self._players_move_id:
                 color_format = Colors.bg_green + Colors.italic + Colors.black
             else:
                 color_format = Colors.underline + Colors.italic
+
             if type(players) != None:
                 print(f'{color_format}{players[player_id].name}:{Colors.reset}')
             else:
@@ -191,7 +227,7 @@ class Azul:
             mv_c(c_row, c_col)
             print('Pattern lines:', end='')
             pl_width = 14
-            for i, pl in enumerate(pb._pattern_lines):
+            for i, pl in enumerate(pb.pattern_lines):
                 c_row += 1
                 c_col = player_id*player_width + pl_width-2*i
                 mv_c(c_row, c_col)
@@ -212,11 +248,11 @@ class Azul:
             c_col = player_id*player_width + pl_width + 4
             mv_c(c_row, c_col)
             print('Wall:', end='')
-            for i, wl in enumerate(pb._wall):
+            for i, wl in enumerate(pb.wall):
                 c_row += 1
                 mv_c(c_row, c_col)
                 for j, tile in enumerate(wl):
-                    color_id = pb._wall_colors[i, j]
+                    color_id = pb.wall_colors[i, j]
                     if color_id == Symbol.Color1: color = Colors.c1
                     if color_id == Symbol.Color2: color = Colors.c2
                     if color_id == Symbol.Color3: color = Colors.c3
@@ -237,11 +273,15 @@ class Azul:
             print('Floor line:', end='')
             c_col = player_id*player_width + pl_width + 4
             mv_c(c_row, c_col)
-            print(f'Score: {pb._score}')
+            if highest_score and pb.score > 0:
+                color_format = Colors.fpm
+                print(f'{color_format}Score: {pb.score}{Colors.reset}')
+            else:
+                print(f'Score: {pb.score}')
             c_row += 1
             c_col = player_id*player_width
             mv_c(c_row, c_col)
-            for tile in pb._floor_line:
+            for tile in pb.floor_line:
                 if tile == Symbol.Color1: print(f'{Colors.c1}{Symbol.Color1}{Colors.reset} ', end='')
                 if tile == Symbol.Color2: print(f'{Colors.c2}{Symbol.Color2}{Colors.reset} ', end='')
                 if tile == Symbol.Color3: print(f'{Colors.c3}{Symbol.Color3}{Colors.reset} ', end='')
@@ -277,12 +317,13 @@ class Azul:
             for i in range(9+1):
                 self._factories.append(Factory())
         self._factories[0].add_tiles(np.array([Symbol.FirstPlayerMarker]))
-        self._refill_factories()        
+        self._refill_factories()
+        self.check_integrity()    
     
     def _is_end_of_round(self) -> bool:
         n_tiles = 0
         for factory in self._factories:
-            n_tiles += factory.get_tiles().size
+            n_tiles += factory.tiles.size
         return n_tiles == 0    
         
     def _handle_end_of_round(self) -> bool:
@@ -294,16 +335,23 @@ class Azul:
             if np.count_nonzero(temp_out_of_game_tiles == Symbol.FirstPlayerMarker):
                 self._players_move_id = i
             self._temp_out_of_game_tiles = np.concatenate((self._temp_out_of_game_tiles, temp_out_of_game_tiles))
-        self._refill_factories()
+        if not is_end_of_game:
+            self._refill_factories()
         return is_end_of_game
     
     def _refill_factories(self) -> None:
         mask_fpm = self._temp_out_of_game_tiles == Symbol.FirstPlayerMarker
         self._factories[0].add_tiles(self._temp_out_of_game_tiles[mask_fpm])
         self._temp_out_of_game_tiles = self._temp_out_of_game_tiles[~mask_fpm]
-        for factory in self._factories[1:]:
-            tiles = self._bag_of_tiles.get_and_remove_n_tiles(4)
-            if tiles.size < 4:
-                self._bag_of_tiles.add_tiles(self._temp_out_of_game_tiles)
-            tiles = np.concatenate((tiles, self._bag_of_tiles.get_and_remove_n_tiles(4 - tiles.size)))
-            factory.add_tiles(tiles)
+        every_factory_has_only_one_color = True
+        while every_factory_has_only_one_color:
+            for factory in self._factories[1:]:
+                tiles = self._bag.get_and_remove_n_tiles(4)
+                if tiles.size < 4:
+                    self._bag.add_tiles(self._temp_out_of_game_tiles)
+                    self._temp_out_of_game_tiles = np.array([], dtype=int)
+                tiles = np.concatenate((tiles, self._bag.get_and_remove_n_tiles(4 - tiles.size)))
+                factory.add_tiles(tiles)
+                if np.unique(tiles).size > 1:
+                    every_factory_has_only_one_color = False
+        

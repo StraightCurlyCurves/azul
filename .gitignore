@@ -1,6 +1,6 @@
 testing.ipynb
-history*
-
+history_*
+*.azh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,89 +1,109 @@
 import numpy as np
-from datetime import datetime
 from copy import deepcopy
 
 from bot import Bot
 from player import Player
-from playerboard import Playerboard
-from factory import Factory
-from bag import Bag
 from azul import Azul
+from history import History
+from move import Move
+
+from my_bot import MyBot
 
 class PlayAzul:
 
-    def __init__(self, show_bots_move: bool = True, *args, **kwargs) -> None:
+    def __init__(self, players: list[Bot|str] = None, history: str = None,
+                 show_bots_move: bool = True, save_history: bool = True, history_file_name: str = None) -> None:
         '''
-        Provide either a list of players or a path to a saved game history:
+        Provide either a list of players or a path to a saved game history or both to overwrite the players saved in the history:
 
         'players'   - Bot|str: List cointaining a bot or a player name
         'history'   - str: Path to a history file
         '''
+        # save input parameters for game reset
+        self.__players = deepcopy(players)
+        self.__history = deepcopy(history)
+        self.__show_bots_move = show_bots_move
+        self.__save_history = save_history
+
         self._show_bots_move = show_bots_move
+        self._save_history = save_history
+        self._history_file_name = history_file_name
         
         self._azul: Azul = None
         self._players: list[Player] = []
 
-        # [ [players], [ players_move, [playerboards], [factories], bag, temp_out_of_game_tiles, [move] ] ]
-        self._history: list[list[Player], list[tuple[int, list[Playerboard], list[Factory], Bag, np.ndarray, list[int]]]] = [self._players, []]
-        self._history_current_index = -1        
+        self._history = History()
 
-        if len(args) > 0:
-            raise ValueError('No positional arguments allowed')
-        if len(kwargs) != 1:
-            raise ValueError(f'{len(kwargs)} arguments given, expected 1.')        
-        if not frozenset(kwargs.keys()).issubset(set(('players', 'history'))):
-            raise ValueError('Unknown arguments: ' + str(kwargs.keys()))
-        if 'players' in kwargs:
+        if players is None and history is None:
+            raise ValueError('Provide either a list of players or a path to a saved game history.')
+            
+        if players is not None and history is None:
             self._seed = np.random.randint(100000)
             np.random.seed(self._seed)
-            players = kwargs['players']
-            for player in players:
-                assert type(player) == str or type(player) == Bot
-                self._players.append(Player(player))
+            self._history.seed = self._seed
+            if len(players) < 2:
+                raise ValueError('At least 2 players required.')
+            if len(players) > 4:
+                raise ValueError('At most 4 players allowed.')
+            for i, player in enumerate(players):
+                if not isinstance(player, (str, Bot)):
+                    raise TypeError(f'Player must be of type str or Bot, not {type(player).__name__}')
+                self._players.append(Player(player, player_id=i))
             player_count = len(self._players)
             self._azul = Azul(player_count, np.random.randint(player_count))
-            self._update_history()
-        if 'history' in kwargs:
-            self._seed = int(kwargs['history'].split('_')[-1].split('.')[0])
-            np.random.seed(self._seed)
-            self._history = np.load(kwargs['history'], allow_pickle=True) 
-            self._players = self._history[0]
-            self._history_current_index = 0
-            state = self._history[1][self._history_current_index]
-            self._azul = Azul(len(self._players))
-            self._azul.set_state(state)
+            self._history.players = self._players
+            self._history.update(self._azul.get_game_state(), [])
 
-    def play(self):
+        if history is not None:
+            self._history.load(history)            
+            self._seed = self._history.seed
+            np.random.seed(self._seed)
+            if players is None:          
+                self._players = self._history.players
+            else:
+                if len(players) != len(self._history.players):
+                    raise ValueError('Number of players in history does not match number of players provided.')
+                for i, player in enumerate(players):
+                    if not isinstance(player, (str, Bot)):
+                        raise TypeError(f'Player must be of type str or Bot, not {type(player).__name__}')
+                    self._players.append(Player(player, player_id=i))
+                self._history.players = self._players
+            state = self._history.current_game_state
+            self._azul = Azul(len(self._players))
+            self._azul.set_game_state(state)
+
+    def play(self) -> list[tuple[str, int, int]]:
         is_end_of_game = False
         while not is_end_of_game:
             players_move_id = self._azul.get_players_move_id()
             player = self._players[players_move_id]
             if player.is_bot:
-                move = player.bot.get_move(self._azul.get_factories(),
-                                           self._azul.get_playerboards())
+                move = player._bot.get_move(self._azul.get_factories(),
+                                           self._azul.get_playerboards(),
+                                           player.player_id)
                 if self._show_bots_move:
                     self._azul.print_state(self._players)
                     print(f"Bot's move:", move)
                     input('Press enter to continue...')
                 try:
-                    is_end_of_game = self._azul.make_move(*move, player_id=players_move_id)
-                    self._update_history([*move, players_move_id])
+                    is_end_of_game = self._azul.make_move(*move)
+                    self._history.update(self._azul.get_game_state(), move)
                 except Exception as e:
                     print(repr(e))
-                    self._save_history(self._seed)
+                    if self._save_history: self._history.save(self._seed, self._history_file_name)
                     print(f"Bot '{player.name}' messed up. History saved.")
-                    exit()
+                    break
             else:
                 self._azul.print_state(self._players)
                 factory_id = input(f'Factory ID: ')
                 if factory_id == 'b':
-                    self._history_move_back()
+                    self._move_back()
                     continue
                 elif factory_id == 'f':
-                    self._history_move_forward()
+                    self._move_forward()
                     continue
                 elif factory_id == 'q':
-                    self._save_history(self._seed)
+                    if self._save_history: self._history.save(self._seed, self._history_file_name)
                     print('Saved game and quit.')
                     break
                 else:
@@ -110,65 +130,94 @@ class PlayAzul:
                     except:
                         input('Not a valid input. Press Enter to try again.')
                         continue
-
+                
+                move = Move(factory_id, color_id, pattern_line_row)
                 try:
-                    is_end_of_game = self._azul.make_move(factory_id, color_id, pattern_line_row, players_move_id)
-                    self._update_history([factory_id, color_id, pattern_line_row, players_move_id])
+                    is_end_of_game = self._azul.make_move(factory_id, color_id, pattern_line_row)
+                    self._history.update(self._azul.get_game_state(), move)
                 except Exception as e:
                     print(repr(e))
                     input('Press Enter to try again.')
                     continue
                 
             if is_end_of_game:
-                self._azul.print_state(self._players)
-                console_input = input("End of game. Press Enter to save and quit or 'b' to go back one move.")
-                if console_input == 'b':
-                    self._history_move_back()
-                    is_end_of_game = False
+                if self._show_bots_move:
+                    self._azul.print_state(self._players)
+                    console_input = input("End of game. Press Enter to save and quit or 'b' to go back one move.")
+                    if console_input == 'b':
+                        self._move_back()
+                        is_end_of_game = False
                 else:
-                    self._save_history(self._seed)
+                    if self._save_history:
+                        self._history.save(self._seed, self._history_file_name)
+                        print('Saved game and quit.')
 
-    def _update_history(self, move: list[int] = []) -> None:
-        if self._history_current_index < len(self._history[1])-1:
-            self._history[1] = self._history[1][:self._history_current_index+1]
-        state = (*self._azul.get_state(), deepcopy(move))
-        self._history[1].append(state)
-        self._history_current_index += 1
+        # create list with player name, player id and score, sorted by score
+        players_score = self._azul.get_players_score()
+        ranklist = sorted([(player.name, player.player_id, score) for player, score in \
+            zip(self._players, players_score)], key=lambda x: x[2], reverse=True)
 
-    def _save_history(self, seed=0):
-        def getTimeStr(seperator=':'):
-            time_format = f"%H{seperator}%M{seperator}%S"
-            time = datetime.now()
-            return time.strftime(time_format)
-
-        def getDateStr(seperator='-'):
-            time_format = f"%Y{seperator}%m{seperator}%d"
-            time = datetime.now()
-            return time.strftime(time_format)
-        path = f"history_{getDateStr('-')}_{getTimeStr('-')}_{self._azul.get_player_count()}_player_seed_{seed}.npy"
-        np.save(path, np.array(self._history, dtype=object), allow_pickle=True)
-
-    def _history_move_back(self) -> bool:
-        if self._history_current_index > 0:
-            self._history_current_index -= 1
-            state = self._history[1][self._history_current_index]
-            self._azul.set_state(state)
-            return True
-        else:
-            return False
+        self.__dict__ = PlayAzul(self.__players, self.__history, self.__show_bots_move, self.__save_history).__dict__
+        return ranklist
     
-    def _history_move_forward(self) -> bool:
-        if self._history_current_index < len(self._history[1])-1:
-            self._history_current_index += 1
-            state = self._history[1][self._history_current_index]
-            self._azul.set_state(state)
-            print('True')
-            return True
-        else:
-            print('False')
-            return False
+    def _move_forward(self) -> bool:
+        try:
+            game_state, _ = self._history.move_forward()
+            self._azul.set_game_state(game_state)
+        except Exception as e:
+            print(repr(e))
+    
+    def _move_back(self) -> bool:
+        try:
+            game_state, _ = self._history.move_back()
+            self._azul.set_game_state(game_state)
+        except Exception as e:
+            print(repr(e))
+
         
 if __name__ == '__main__':
-    game = PlayAzul(players=['P1', 'P2'])
-    # game = PlayAzul(history='history_???.npy')
-    game.play()
+    ### Play a game with two friends ###
+    players = ['Me', 'Myself', 'I']
+    game = PlayAzul(players=players)
+    ranklist = game.play()
+    for i, rank in enumerate(ranklist):
+        print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
+
+    ### Play a game against a bot ###
+    bot = MyBot('Bot')
+    players = ['Me', bot]
+    game = PlayAzul(players=players)
+    ranklist = game.play()
+    for i, rank in enumerate(ranklist):
+        print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
+
+    ### Let three bots play against each other ###
+    bot_1 = MyBot('Bot 1')
+    bot_2 = MyBot('Bot 2')
+    bot_3 = MyBot('Bot 3')
+    players=[bot_1, bot_2, bot_3]
+    game = PlayAzul(players=players, history_file_name='bot_game', show_bots_move=False)
+    ranklist = game.play()
+    for i, rank in enumerate(ranklist):
+        print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
+
+    ### Load a game played by bots but play and alternate it manually ###
+    players = ['Me', 'Myself', 'I']
+    game = PlayAzul(players=players, history='bot_game')
+    ranklist = game.play()
+    for i, rank in enumerate(ranklist):
+        print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
+
+    ### Simulate 1000 games between two bots ###
+    bot_1 = MyBot('Bot 1')
+    bot_2 = MyBot('Bot 2')
+    players=[bot_1, bot_2]
+    game = PlayAzul(players=players, show_bots_move=False, save_history=False)
+    wins = [0]*len(players)
+    for i in range(1000):
+        ranklist = game.play()
+        winner_id = ranklist[0][1]
+        wins[winner_id] += 1
+        print('\r', end='')
+        print(f'{i+1} games played', end='')
+    print('Wins:', wins)

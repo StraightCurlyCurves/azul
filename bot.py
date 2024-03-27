@@ -1,20 +1,24 @@
-import numpy as np
-from symbols import Symbol
+from abc import ABC, abstractmethod
+
 from factory import Factory
 from playerboard import Playerboard
 
+from move import Move
 
-class Bot:
+class Bot(ABC):
 
-    def __init__(self, name: str = 'myBotName') -> None:
+    def __init__(self, name: str) -> None:
         self._name = name
 
-    def get_move(self, factories: list[Factory], playerboards: list[Playerboard]) -> list[int]:
-        factory_id: int = 0
-        color_id: int = 0
-        pattern_line_row: int = 0
-
-        return [factory_id, color_id, pattern_line_row]
+    @abstractmethod
+    def get_move(self, factories: list[Factory], playerboards: list[Playerboard], player_id: int) -> Move:
+        pass
     
-    def get_name(self):
+    @property
+    def name(self):
         return self._name
+    
+    @name.setter
+    def name(self, name):
+        self._name = name
+        

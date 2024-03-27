@@ -1,5 +1,6 @@
 import numpy as np
 from symbols import Symbol
+from copy import deepcopy
 
 # TODO: better way of Symbol shortcut than global constants
 
@@ -17,6 +18,7 @@ class Playerboard:
         self._score = 0
         self._wall = np.full((5,5), EF, dtype=int)
         self._pattern_lines: list[np.ndarray] = []
+
         for i in range(5):
             self._pattern_lines.append(np.full(i+1, EF, dtype=int))
         self._floor_line = np.full(7, EF, dtype=int)
@@ -203,3 +205,23 @@ class Playerboard:
         self._pattern_lines[pattern_line_row][mask_empty_fields] = empty_fields
 
         return temp_out_of_game_tiles
+    
+    @property
+    def score(self) -> int:
+        return self._score
+    
+    @property
+    def wall(self) -> np.ndarray:
+        return deepcopy(self._wall)
+    
+    @property
+    def wall_colors(self) -> np.ndarray:
+        return deepcopy(self._wall_colors)
+
+    @property
+    def pattern_lines(self) -> list[np.ndarray]:
+        return deepcopy(self._pattern_lines)
+
+    @property
+    def floor_line(self) -> np.ndarray:
+        return deepcopy(self._floor_line)

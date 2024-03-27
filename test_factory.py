@@ -2,10 +2,10 @@ import numpy as np
 from symbols import Symbol
 from factory import Factory
 
-def test_get_tiles():
+def test_tiles():
     f = Factory()
     f._tiles = np.array([1,1,2,3], dtype=int)
-    tiles = f.get_tiles()
+    tiles = f.tiles
     assert tiles.size == 4
     assert id(tiles) != id(f._tiles)
     tiles = tiles[:1]
