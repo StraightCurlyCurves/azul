@@ -16,11 +16,11 @@ If you place the tiles on a pattern line row which can't hold some or any of the
 
 In case you provided an invalid factory ID or Color ID, it will ask you for it again.
 
-If you mistakenly picked a factory ID or Color ID you didn't whish to pick, provide the letter 'c' for the color ID or pattern line row to cancel your inputs and to start your turn over.
+If you mistakenly picked a factory ID or Color ID you didn't whish to pick, provide the letter 'c' to the color ID or pattern line row to cancel your inputs and to start your turn over.
 
-In case you are not happy with your turn or mistyped the last input (pattern line row) you always can go back in history as many times you wish (and your co players let you) by providing the letter 'b' for the factory ID.
+In case you are not happy with your turn or mistyped the last input (pattern line row) you always can go back in history as many times you wish (and your co-players let you) by providing the letter 'b' to the factory ID.
 
-Was the turn okay nevertheless, you can go forward in history by providing the letter 'f' for the factory ID.
+Was the turn okay nevertheless, you can go forward in history by providing the letter 'f' to the factory ID.
 
 Here are some examples on how you can play different kind of games. These examples can also be found in ``play_azul.py``
 
