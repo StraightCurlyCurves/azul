@@ -75,11 +75,11 @@ class PlayAzul:
     def play(self) -> list[tuple[str, int, int]]:
         is_end_of_game = False
         while not is_end_of_game:
-            players_move_id = self._azul.get_players_move_id()
+            players_move_id = self._azul.players_move_id
             player = self._players[players_move_id]
             if player.is_bot:
-                move = player._bot.get_move(self._azul.get_factories(),
-                                           self._azul.get_playerboards(),
+                move = player._bot.get_move(self._azul.factories,
+                                           self._azul.playerboards,
                                            player.player_id)
                 if self._show_bots_move:
                     self._azul.print_state(self._players)

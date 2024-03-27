@@ -25,3 +25,7 @@ class Bag:
 
     def add_tiles(self, tiles) -> None:
         self._tiles = np.concatenate((self._tiles, tiles))
+
+    @property
+    def tiles(self) -> np.ndarray:
+        return self._tiles
