@@ -1,15 +1,16 @@
-# Azul
+# Contents
+- About Azul
+- How to play a game
+- How to write a bot
+
+# About Azul
 Azul is a boardgame for 2-4 players ([watch rule video here](https://youtu.be/csJL-78NEPQ)). With this repository you can play Azul with your friends, against bots or let bots play against each other.
 
 If not set otherwise, a history of the game will be saved. The history can be loaded to go back to a certain point of the game and take a different turn from there.
 
 IMPORTANT: Make sure the console is high enough to display the whole game board. Otherwise the game will not be displayed correctly.
 
-# How to get started
-- How to play a game
-- How to write a bot
-
-## How to play a game
+# How to play a game
 If you play a game with manual players (not bots) or mixed, the console asks the non-bot players to provide a factory ID to pick from, a color ID to pick and a pattern line row you wish to place the tiles on.
 
 If you place the tiles on a pattern line row which can't hold some or any of the tiles, the corresponding tiles will automatically fall on the floor line.
@@ -85,7 +86,7 @@ for i in range(1000):
 print('Wins:', wins)
 ```
 
-## How to write a bot
+# How to write a bot
 Create a bot class by inheriting ``Bot`` from ``bot.py``. Reimplement the ``get_move`` method returning a valid move ``tuple[factory_id, color_id, pattern_line_row]``. The method provides you with the visible state of the game board and which player's turn it is:
 
 - ``factories``: List of all factories. ``factory[0]`` is the middle pool. 
@@ -116,11 +117,14 @@ class MyBot(Bot):
         super().__init__(name)
 
     def get_move(self, factories: list[Factory], playerboards: list[Playerboard], player_id: int) -> Move:
+        '''
+        Returns a simple but valid move.
+        '''
         factory_id = None
         color_id = None
         pattern_line_row = None
 
-        # find a valid factory to take tiles from
+        # find a valid factory ID to take tiles from
         for i, factory in enumerate(factories):
             factory_id = i
             tiles = factory.tiles
@@ -129,7 +133,7 @@ class MyBot(Bot):
                 color_id = tiles[valid_tiles_mask][0]
                 break
         
-        # optional: try to find a valid pattern line to place at least one tile
+        # try to find a valid pattern line to place at least one tile
         playerboard = playerboards[player_id]
         for i, pattern_line in enumerate(playerboard.pattern_lines):
             wall_line = playerboard.wall[i]

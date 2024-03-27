@@ -11,6 +11,9 @@ class MyBot(Bot):
         super().__init__(name)
 
     def get_move(self, factories: list[Factory], playerboards: list[Playerboard], player_id: int) -> Move:
+        '''
+        Returns a simple but valid move.
+        '''
         factory_id = None
         color_id = None
         pattern_line_row = None
@@ -24,7 +27,7 @@ class MyBot(Bot):
                 color_id = tiles[valid_tiles_mask][0]
                 break
         
-        # optional: try to find a valid pattern line to place at least one tile
+        # try to find a valid pattern line to place at least one tile
         playerboard = playerboards[player_id]
         for i, pattern_line in enumerate(playerboard.pattern_lines):
             wall_line = playerboard.wall[i]
