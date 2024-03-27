@@ -1,5 +1,5 @@
 # Azul
-Azul is a boardgame for 2-4 players. With this repository you can play Azul with your friends, against bots or let bots play against each other.
+Azul is a boardgame for 2-4 players ([watch rule video here](https://youtu.be/csJL-78NEPQ)). With this repository you can play Azul with your friends, against bots or let bots play against each other.
 
 If not set otherwise, a history of the game will be saved. The history can be loaded to go back to a certain point of the game and take a different turn from there.
 
