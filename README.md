@@ -2,6 +2,7 @@
 - About Azul
 - How to play a game
 - How to write a bot
+- TODOs
 
 # About Azul
 Azul is a boardgame for 2-4 players ([watch rule video here](https://youtu.be/csJL-78NEPQ)). With this repository you can play Azul with your friends, against bots or let bots play against each other.
@@ -149,3 +150,11 @@ class MyBot(Bot):
             
         return Move(factory_id, color_id, pattern_line_row)
 ```
+
+# TODOs
+- Write tests for classes:
+  - ``Azul`` in ``azul.py``
+  - ``History`` in ``history.py``
+  - ``PlayAzul`` in ``play_azul.py``
+- Play test games and check correct behavior.
+- Add network functionality to play the game inside a local network
