@@ -1,17 +1,25 @@
-# Contents
-- About Azul
-- How to play a game
-- How to write a bot
-- TODOs
+# Azul
+Current version: ``1.0.0`` (initial release). See [CHANGELOG.md](CHANGELOG.md)
 
-# About Azul
+## Contents
+- [License](#license)
+- [About Azul](#about-azul)
+- [How to play a game](#how-to-play-a-game)
+- [How to write a bot](#how-to-write-a-bot)
+- [TODOs](#todos)
+- [Versioning](#versioning)
+
+## License
+This project is licensed under the terms of the MIT license. See [LICENSE.txt](LICENSE.txt)
+
+## About Azul
 Azul is a boardgame for 2-4 players ([watch rule video here](https://youtu.be/csJL-78NEPQ)). With this repository you can play Azul with your friends, against bots or let bots play against each other.
 
 If not set otherwise, a history of the game will be saved. The history can be loaded to go back to a certain point of the game and take a different turn from there.
 
-IMPORTANT: Make sure the console is high enough to display the whole game board. Otherwise the game will not be displayed correctly.
+<span style="color:red;">IMPORTANT</span>: Make sure the console is high enough to display the whole game board. Otherwise the game will not be displayed correctly.
 
-# How to play a game
+## How to play a game
 If you play a game with manual players (not bots) or mixed, the console asks the non-bot players to provide a factory ID to pick from, a color ID to pick and a pattern line row you wish to place the tiles on.
 
 If you place the tiles on a pattern line row which can't hold some or any of the tiles, the corresponding tiles will automatically fall on the floor line.
@@ -24,9 +32,9 @@ In case you are not happy with your turn or mistyped the last input (pattern lin
 
 Was the turn okay nevertheless, you can go forward in history by providing the letter 'f' to the factory ID.
 
-Here are some examples on how you can play different kind of games. These examples can also be found in ``play_azul.py``
+Here are some examples on how you can play different kind of games. These examples can also be found in [``play_azul.py``](play_azul.py)
 
-If you're not in ``play_azul.py``, import ``PlayAzul``:
+If you're not in [``play_azul.py``](play_azul.py), import ``PlayAzul``:
 ```python
 from play_azul import PlayAzul
 ```
@@ -87,8 +95,8 @@ for i in range(1000):
 print('Wins:', wins)
 ```
 
-# How to write a bot
-Create a bot class by inheriting ``Bot`` from ``bot.py``. Reimplement the ``get_move`` method returning a valid move ``tuple[factory_id, color_id, pattern_line_row]``. The method provides you with the visible state of the game board and which player's turn it is:
+## How to write a bot
+Create a bot class by inheriting ``Bot`` from [``bot.py``](bot.py). Reimplement the ``get_move`` method returning a valid move ``tuple[factory_id, color_id, pattern_line_row]``. The method provides you with the visible state of the game board and which player's turn it is:
 
 - ``factories``: List of all factories. ``factory[0]`` is the middle pool. 
   - Public methods and properties:
@@ -109,7 +117,7 @@ Create a bot class by inheriting ``Bot`` from ``bot.py``. Reimplement the ``get_
     - ``floor_line``
 - ``player_id``: Player's ID to make a move. Its corresponding playerboard is ``playerboard[player_id]``
 
-A simple example ``MyBot`` can be found in ``my_bot.py``. This bot takes the first color of the first valid factory to take tiles from and places it on the first valid pattern line if there is one:
+A simple example ``MyBot`` can be found in [``my_bot.py``](my_bot.py). This bot takes the first color of the first valid factory to take tiles from and places it on the first valid pattern line if there is one:
 
 ```python
 class MyBot(Bot):
@@ -151,10 +159,22 @@ class MyBot(Bot):
         return Move(factory_id, color_id, pattern_line_row)
 ```
 
-# TODOs
+## TODOs
 - Write tests for classes:
   - ``Azul`` in ``azul.py``
   - ``History`` in ``history.py``
   - ``PlayAzul`` in ``play_azul.py``
 - Play test games and check correct behavior.
 - Add network functionality to play the game inside a local network
+
+
+## Versioning
+This repository uses [Semantic Versioning](http://semver.org/). Here is a summary:
+- MAJOR version when incompatible API changes were made,
+- MINOR version when functionality in a backwards-compatible manner was added, and
+- PATCH version for backwards-compatible bug fixes.
+
+Examples:
+- 1.0.0: Initial release.
+- 1.1.0: Minor release for new backward-compatible features.
+- 1.1.1: Patch release for bug fixes.
