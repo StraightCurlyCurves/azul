@@ -23,15 +23,17 @@ class History:
         self._history_file_ending = 'azh'
 
     def move_back(self) -> tuple[GameState, Move]:
-        if self._current_game_state_index == -1:
-            raise ValueError('No more moves to undo.')
-        self._current_game_state_index -= 1
+        if self._current_game_state_index == 0:
+            self._current_game_state_index = len(self._game_states) - 1
+        else:
+            self._current_game_state_index -= 1
         return self._game_states[self._current_game_state_index], self._moves[self._current_game_state_index]
     
     def move_forward(self) -> tuple[GameState, Move]:
         if self._current_game_state_index == len(self._game_states) - 1:
-            raise ValueError('No more moves to redo.')
-        self._current_game_state_index += 1
+            self._current_game_state_index = 0
+        else:
+            self._current_game_state_index += 1
         return self._game_states[self._current_game_state_index], self._moves[self._current_game_state_index]
     
     def update(self, game_state: GameState, move: Move) -> None:
