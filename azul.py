@@ -80,7 +80,7 @@ class Azul:
     def check_integrity(self) -> None:
         all_tiles = np.array([], dtype=int)
         all_tiles = np.concatenate((all_tiles, self._temp_out_of_game_tiles))
-        all_tiles = np.concatenate((all_tiles, self._bag._tiles))
+        all_tiles = np.concatenate((all_tiles, self._bag.tiles))
         for f in self._factories:
             all_tiles = np.concatenate((all_tiles, f._tiles))
         for pb in self._playerboards:
@@ -105,18 +105,6 @@ class Azul:
             self.print_state()
             raise Exception('Integrity check failed.')
 
-    def get_playerboards(self) -> list[Playerboard]:
-        return deepcopy(self._playerboards)
-    
-    def get_factories(self) -> list[Factory]:
-        return deepcopy(self._factories)
-    
-    def get_players_move_id(self):
-        return self._players_move_id
-    
-    def get_player_count(self) -> int:
-        return self._player_count
-
     def get_players_score(self) -> list[int]:
         scores = []
         for pb in self._playerboards:
@@ -139,7 +127,7 @@ class Azul:
 
         print('Bag:')
         esc_string = ''
-        for i, tile in enumerate(self._bag._tiles):
+        for i, tile in enumerate(self._bag.tiles):
             if i > 0 and i%bag_width == 0:
                 esc_string += '\n'
                 bag_row_count += 1
@@ -354,4 +342,16 @@ class Azul:
                 factory.add_tiles(tiles)
                 if np.unique(tiles).size > 1:
                     every_factory_has_only_one_color = False
+        
+    @property
+    def playerboards(self) -> list[Playerboard]:
+        return deepcopy(self._playerboards)
+    
+    @property    
+    def factories(self) -> list[Factory]:
+        return deepcopy(self._factories)
+    
+    @property    
+    def players_move_id(self):
+        return self._players_move_id
         
