@@ -1,3 +1,7 @@
+import sys
+if sys.version_info < (3, 10):
+    sys.exit("Script requires Python 3.10 or higher")
+
 import numpy as np
 from copy import deepcopy
 
@@ -8,6 +12,8 @@ from history import History
 from move import Move
 
 from my_bot import MyBot
+
+VERSION = '1.0.0'
 
 class PlayAzul:
 
