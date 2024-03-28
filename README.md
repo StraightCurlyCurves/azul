@@ -19,9 +19,9 @@ If not set otherwise, a history of the game will be saved. The history can be lo
 
 <code style="color : red " >IMPORTANT:</code> Make sure the console is high enough to display the whole game board. Otherwise the game will not be displayed correctly.
 
-| ![preview_game_setup.png](preview_game_setup.png) | ![preview_ingame.png](preview_ingame.png) |
+| ![preview_game_setup.png](/images/preview_game_setup.png) | ![preview_ingame.png](/images/preview_ingame.png) |
 |:---:|:---:|
-| Game board after setup | Game board ingame |
+| Game board after setup | Game board in-game |
 
 ## How to play a game
 If you play a game with manual players (not bots) or mixed, the console asks the non-bot players to provide a factory ID to pick from, a color ID to pick and a pattern line row you wish to place the tiles on.

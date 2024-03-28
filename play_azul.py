@@ -183,20 +183,20 @@ class PlayAzul:
 
         
 if __name__ == '__main__':
-    # ### Play a game with two friends ###
-    # players = ['Alice', 'Bob', 'Mallory']
-    # game = PlayAzul(players=players)
-    # ranklist = game.play()
-    # for i, rank in enumerate(ranklist):
-    #     print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
+    ### Play a game with two friends ###
+    players = ['Alice', 'Bob', 'Mallory']
+    game = PlayAzul(players=players)
+    ranklist = game.play()
+    for i, rank in enumerate(ranklist):
+        print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
 
-    # ### Play a game against a bot ###
-    # bot = MyBot('Bot')
-    # players = ['Me', bot]
-    # game = PlayAzul(players=players)
-    # ranklist = game.play()
-    # for i, rank in enumerate(ranklist):
-    #     print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
+    ### Play a game against a bot ###
+    bot = MyBot('Bot')
+    players = ['Me', bot]
+    game = PlayAzul(players=players)
+    ranklist = game.play()
+    for i, rank in enumerate(ranklist):
+        print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
 
     ### Let three bots play against each other ###
     bot_1 = MyBot('Bot 1')
