@@ -7,6 +7,9 @@
 ### Removed
 - Removed the variables `self.__show_bots_move` and `self.__save_history` from the `PlayAzul` class, as they remain constant during a game and are unnecessary for game reset.
 
+### Fixed
+- Corrected the import statement in `azul.py`. Previously, `GameState` was mistakenly imported from `history`. It is now correctly imported from `game_state`.
+
 ## [1.0.0] - 2024-03-27
 ### Added
 - Initial release

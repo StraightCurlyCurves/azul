@@ -8,7 +8,7 @@ from bag import Bag
 from symbols import Symbol
 from cmd_colors import Colors
 from player import Player
-from history import GameState
+from game_state import GameState
 
 class Azul:
 
