@@ -111,7 +111,7 @@ class Azul:
             scores.append(pb.score)
         return scores
     
-    def print_state(self, players: list[Player] = None) -> None:
+    def print_state(self, players: list[Player] = None, show_bag_tiles: bool = False) -> None:
         def mv_c(row, col):
             print(f'\033[{row};{col}H', end='')
         bag_width = 15
@@ -131,13 +131,16 @@ class Azul:
             if i > 0 and i%bag_width == 0:
                 esc_string += '\n'
                 bag_row_count += 1
-            if tile == Symbol.Color1: esc_string += f'{Colors.c1}{Symbol.Color1}{Colors.reset} '
-            if tile == Symbol.Color2: esc_string += f'{Colors.c2}{Symbol.Color2}{Colors.reset} '
-            if tile == Symbol.Color3: esc_string += f'{Colors.c3}{Symbol.Color3}{Colors.reset} '
-            if tile == Symbol.Color4: esc_string += f'{Colors.c4}{Symbol.Color4}{Colors.reset} '
-            if tile == Symbol.Color5: esc_string += f'{Colors.c5}{Symbol.Color5}{Colors.reset} '
-            if tile == Symbol.FirstPlayerMarker: esc_string += f'{Colors.fpm}{Symbol.FirstPlayerMarker}{Colors.reset} '
-            if tile == Symbol.EmptyField: esc_string += f'{Colors.ef}{Symbol.EmptyField}{Colors.reset} '
+            if show_bag_tiles:
+                if tile == Symbol.Color1: esc_string += f'{Colors.c1}{Symbol.Color1}{Colors.reset} '
+                if tile == Symbol.Color2: esc_string += f'{Colors.c2}{Symbol.Color2}{Colors.reset} '
+                if tile == Symbol.Color3: esc_string += f'{Colors.c3}{Symbol.Color3}{Colors.reset} '
+                if tile == Symbol.Color4: esc_string += f'{Colors.c4}{Symbol.Color4}{Colors.reset} '
+                if tile == Symbol.Color5: esc_string += f'{Colors.c5}{Symbol.Color5}{Colors.reset} '
+                if tile == Symbol.FirstPlayerMarker: esc_string += f'{Colors.fpm}{Symbol.FirstPlayerMarker}{Colors.reset} '
+                if tile == Symbol.EmptyField: esc_string += f'{Colors.ef}{Symbol.EmptyField}{Colors.reset} '
+            else:
+                esc_string += f'{Colors.ef}X{Colors.reset} '
         print(esc_string, end='')
 
         c_row, c_col = bag_row_start, 2*bag_width+3

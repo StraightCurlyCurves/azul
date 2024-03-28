@@ -1,5 +1,5 @@
 # Azul
-Current version: ``1.0.0`` (initial release). See [CHANGELOG.md](CHANGELOG.md)
+Current version: `1.1.0`. See [CHANGELOG.md](CHANGELOG.md)
 
 ## Contents
 - [License](#license)
@@ -17,7 +17,11 @@ Azul is a boardgame for 2-4 players ([watch rule video here](https://youtu.be/cs
 
 If not set otherwise, a history of the game will be saved. The history can be loaded to go back to a certain point of the game and take a different turn from there.
 
-<span style="color:red;">IMPORTANT</span>: Make sure the console is high enough to display the whole game board. Otherwise the game will not be displayed correctly.
+<code style="color : red " >IMPORTANT:</code> Make sure the console is high enough to display the whole game board. Otherwise the game will not be displayed correctly.
+
+| ![preview_game_setup.png](preview_game_setup.png) | ![preview_ingame.png](preview_ingame.png) |
+|:---:|:---:|
+| Game board after setup | Game board ingame |
 
 ## How to play a game
 If you play a game with manual players (not bots) or mixed, the console asks the non-bot players to provide a factory ID to pick from, a color ID to pick and a pattern line row you wish to place the tiles on.
@@ -32,9 +36,9 @@ In case you are not happy with your turn or mistyped the last input (pattern lin
 
 Was the turn okay nevertheless, you can go forward in history by providing the letter 'f' to the factory ID.
 
-Here are some examples on how you can play different kind of games. These examples can also be found in [``play_azul.py``](play_azul.py)
+Here are some examples on how you can play different kind of games. These examples can also be found in [`play_azul.py`](play_azul.py)
 
-If you're not in [``play_azul.py``](play_azul.py), import ``PlayAzul``:
+If you're not in [`play_azul.py`](play_azul.py), import `PlayAzul`:
 ```python
 from play_azul import PlayAzul
 ```
@@ -96,28 +100,28 @@ print('Wins:', wins)
 ```
 
 ## How to write a bot
-Create a bot class by inheriting ``Bot`` from [``bot.py``](bot.py). Reimplement the ``get_move`` method returning a valid move ``tuple[factory_id, color_id, pattern_line_row]``. The method provides you with the visible state of the game board and which player's turn it is:
+Create a bot class by inheriting `Bot` from [`bot.py`](bot.py). Reimplement the `get_move` method returning a valid move `tuple[factory_id, color_id, pattern_line_row]`. The method provides you with the visible state of the game board and which player's turn it is:
 
-- ``factories``: List of all factories. ``factory[0]`` is the middle pool. 
+- `factories`: List of all factories. `factory[0]` is the middle pool. 
   - Public methods and properties:
-    - ``get_and_remove_tiles()``
-    - ``get_and_remove_color_tiles(color_id)``
-    - ``add_tiles(tiles)``
-    - ``tiles``
+    - `get_and_remove_tiles()`
+    - `get_and_remove_color_tiles(color_id)`
+    - `add_tiles(tiles)`
+    - `tiles`
   
-- ``playerboards``: List of all playerboards.
+- `playerboards`: List of all playerboards.
   - Public methods and properties:
-    - ``place_tiles(tiles, pattern_line_row)``
-    - ``handle_end_of_round_and_get_tiles()``
-    - ``handle_end_of_game()``
-    - ``score``
-    - ``wall``
-    - ``wall_colors``
-    - ``pattern_lines``
-    - ``floor_line``
-- ``player_id``: Player's ID to make a move. Its corresponding playerboard is ``playerboard[player_id]``
+    - `place_tiles(tiles, pattern_line_row)`
+    - `handle_end_of_round_and_get_tiles()`
+    - `handle_end_of_game()`
+    - `score`
+    - `wall`
+    - `wall_colors`
+    - `pattern_lines`
+    - `floor_line`
+- `player_id`: Player's ID to make a move. Its corresponding playerboard is `playerboard[player_id]`
 
-A simple example ``MyBot`` can be found in [``my_bot.py``](my_bot.py). This bot takes the first color of the first valid factory to take tiles from and places it on the first valid pattern line if there is one:
+A simple example `MyBot` can be found in [`my_bot.py`](my_bot.py). This bot takes the first color of the first valid factory to take tiles from and places it on the first valid pattern line if there is one:
 
 ```python
 class MyBot(Bot):
@@ -161,9 +165,9 @@ class MyBot(Bot):
 
 ## TODOs
 - Write tests for classes:
-  - ``Azul`` in ``azul.py``
-  - ``History`` in ``history.py``
-  - ``PlayAzul`` in ``play_azul.py``
+  - `Azul` in `azul.py`
+  - `History` in `history.py`
+  - `PlayAzul` in `play_azul.py`
 - Play test games and check correct behavior.
 - Add network functionality to play the game inside a local network
 

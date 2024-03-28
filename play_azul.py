@@ -17,8 +17,8 @@ VERSION = '1.0.0'
 
 class PlayAzul:
 
-    def __init__(self, players: list[Bot|str] = None, history: str = None,
-                 show_bots_move: bool = True, save_history: bool = True, history_file_name: str = None) -> None:
+    def __init__(self, players: list[Bot|str] = None, history: str = None, show_bots_move: bool = True,
+                 save_history: bool = True, history_file_name: str = None, show_bag_tiles: bool = False) -> None:
         '''
         Provide either a list of players or a path to a saved game history or both to overwrite the players saved in the history:
 
@@ -28,12 +28,11 @@ class PlayAzul:
         # save input parameters for game reset
         self.__players = deepcopy(players)
         self.__history = deepcopy(history)
-        self.__show_bots_move = show_bots_move
-        self.__save_history = save_history
 
         self._show_bots_move = show_bots_move
         self._save_history = save_history
         self._history_file_name = history_file_name
+        self._show_bag_tiles = show_bag_tiles
         
         self._azul: Azul = None
         self._players: list[Player] = []
@@ -88,7 +87,7 @@ class PlayAzul:
                                            self._azul.playerboards,
                                            player.player_id)
                 if self._show_bots_move:
-                    self._azul.print_state(self._players)
+                    self._azul.print_state(self._players, self._show_bag_tiles)
                     print(f"Bot's move:", move)
                     input('Press enter to continue...')
                 try:
@@ -100,7 +99,7 @@ class PlayAzul:
                     print(f"Bot '{player.name}' messed up. History saved.")
                     break
             else:
-                self._azul.print_state(self._players)
+                self._azul.print_state(self._players, self._show_bag_tiles)
                 factory_id = input(f'Factory ID: ')
                 if factory_id == 'b':
                     self._move_back()
@@ -148,7 +147,7 @@ class PlayAzul:
                 
             if is_end_of_game:
                 if self._show_bots_move:
-                    self._azul.print_state(self._players)
+                    self._azul.print_state(self._players, self._show_bag_tiles)
                     console_input = input("End of game. Press Enter to save and quit or 'b' to go back one move.")
                     if console_input == 'b':
                         self._move_back()
@@ -163,7 +162,9 @@ class PlayAzul:
         ranklist = sorted([(player.name, player.player_id, score) for player, score in \
             zip(self._players, players_score)], key=lambda x: x[2], reverse=True)
 
-        self.__dict__ = PlayAzul(self.__players, self.__history, self.__show_bots_move, self.__save_history).__dict__
+        # reset game
+        self.__dict__ = PlayAzul(self.__players, self.__history, self._show_bots_move,
+                                 self._save_history, self._history_file_name, self._show_bag_tiles).__dict__
         return ranklist
     
     def _move_forward(self) -> bool:
@@ -182,20 +183,20 @@ class PlayAzul:
 
         
 if __name__ == '__main__':
-    ### Play a game with two friends ###
-    players = ['Me', 'Myself', 'I']
-    game = PlayAzul(players=players)
-    ranklist = game.play()
-    for i, rank in enumerate(ranklist):
-        print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
+    # ### Play a game with two friends ###
+    # players = ['Alice', 'Bob', 'Mallory']
+    # game = PlayAzul(players=players)
+    # ranklist = game.play()
+    # for i, rank in enumerate(ranklist):
+    #     print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
 
-    ### Play a game against a bot ###
-    bot = MyBot('Bot')
-    players = ['Me', bot]
-    game = PlayAzul(players=players)
-    ranklist = game.play()
-    for i, rank in enumerate(ranklist):
-        print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
+    # ### Play a game against a bot ###
+    # bot = MyBot('Bot')
+    # players = ['Me', bot]
+    # game = PlayAzul(players=players)
+    # ranklist = game.play()
+    # for i, rank in enumerate(ranklist):
+    #     print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
 
     ### Let three bots play against each other ###
     bot_1 = MyBot('Bot 1')
@@ -208,7 +209,7 @@ if __name__ == '__main__':
         print(f'{i+1}. {rank[0]}, Score: {rank[2]}')
 
     ### Load a game played by bots but play and alternate it manually ###
-    players = ['Me', 'Myself', 'I']
+    players = ['Alice', 'Bob', 'Mallory']
     game = PlayAzul(players=players, history='bot_game')
     ranklist = game.play()
     for i, rank in enumerate(ranklist):
